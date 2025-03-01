@@ -31,6 +31,7 @@ export class AppComponent {
       y: 0,
       row: null,
       month: '',
+      isNameCell: false
     }
   );
 
@@ -98,24 +99,36 @@ export class AppComponent {
     this.appService.budgets.set([...budgets]);
   }
 
-  deleteBudget(id: number, parentCategoryId?: number) {
+  deleteBudget(id: number) {
     const budgets = this.appService.budgets();
+    
+    const rootIndex = budgets.findIndex(b => b.id === id);
 
-    if (parentCategoryId) {
-      const parent = budgets.find((b) => b.id === parentCategoryId);
+    if (rootIndex !== -1) {
+      budgets.splice(rootIndex, 1);
 
-      if (parent) {
-        parent.children = parent.children?.filter((b) => b.id !== id);
-      }
-    } else {
-      const index = budgets.findIndex((b) => b.id === id);
+      this.appService.budgets.set([...budgets]);
+      this.contextMenu$.next({ ...this.contextMenu$.getValue(), visible: false });
 
-      if (index !== -1) {
-        budgets.splice(index, 1);
+      return;
+    }
+  
+    for (const parent of budgets) {
+      if (parent.children) {
+        const childIndex = parent.children.findIndex(c => c.id === id);
+
+        if (childIndex !== -1) {
+          parent.children.splice(childIndex, 1);
+
+          this.appService.budgets.set([...budgets]);
+          this.contextMenu$.next({ ...this.contextMenu$.getValue(), visible: false });
+
+          return;
+        }
       }
     }
-
-    this.appService.budgets.set([...budgets]);
+    
+    this.contextMenu$.next({ ...this.contextMenu$.getValue(), visible: false });
   }
 
   subTotal(month: string, type: BUDGET_TYPE, id: number): number {
@@ -183,15 +196,19 @@ export class AppComponent {
     this.contextMenu$.next({ ...this.contextMenu$.getValue(), visible: false });
   }
 
-  onRightClick(event: MouseEvent, row: Budget, month: string) {
+  onRightClick(event: MouseEvent, row: Budget, month: string, isNameCell: boolean = false) {
     event.preventDefault();
+
+    const activeElement = document.activeElement as HTMLElement;
+    const rect = activeElement.getBoundingClientRect();
 
     this.contextMenu$.next({
       visible: true,
-      x: event.clientX,
-      y: event.clientY,
+      x: rect.left,
+      y:rect.bottom + 15,
       row,
       month,
+      isNameCell
     });
   }
 

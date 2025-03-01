@@ -19,6 +19,7 @@ export interface ContextMenu {
   y: number;
   row: Budget | null;
   month: string;
+  isNameCell: boolean;
 }
 
 @Injectable()

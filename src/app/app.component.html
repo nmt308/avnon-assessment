@@ -51,19 +51,14 @@
               <td
                 class="p-2 flex items-center focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
               >
-                <p
-                  class="px-2 bg-red-400 text-white cursor-pointer mr-2"
-                  (click)="deleteBudget(incomeBudget.id)"
-                >
-                  -
-                </p>
-
                 <input
                   inputNavigate
                   type="text"
                   [(ngModel)]="incomeBudget.name"
                   class="font-bold w-full border-none focus:ring-0 focus:outline-none"
                   autofocus
+                  (keydown.enter)="addBudget(BUDGET_TYPE.INCOME, incomeBudget.id)"
+                  (contextmenu)="onRightClick($event, incomeBudget, '', true)"
                 />
               </td>
               @for (month of months$ | async; track month; let last = $last) {
@@ -79,6 +74,7 @@
                   [(ngModel)]="incomeBudget.amount[month]"
                   (contextmenu)="onRightClick($event, incomeBudget, month)"
                   class="w-full text-right border-none focus:ring-0 focus:outline-none"
+                  (keydown.enter)="addBudget(BUDGET_TYPE.INCOME, incomeBudget.id)"
                 />
               </td>
               }
@@ -87,20 +83,15 @@
             @for (child of incomeBudget.children; track child.id) {
             <tr class="border">
               <td
-                class="p-2 flex items-center pl-6 focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
+                class="p-2 flex items-center focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
               >
-                <p
-                  class="px-2 bg-red-400 text-white cursor-pointer mr-2"
-                  (click)="deleteBudget(child.id, incomeBudget.id)"
-                >
-                  -
-                </p>
-
                 <input
                   inputNavigate
                   type="text"
                   [(ngModel)]="child.name"
                   class="w-full border-none focus:ring-0 focus:outline-none"
+                  (keydown.enter)="addBudget(BUDGET_TYPE.INCOME, incomeBudget.id)"
+                  (contextmenu)="onRightClick($event, child, '', true)"
                 />
               </td>
               @for (month of months$ | async; track month; let last = $last) {
@@ -114,8 +105,9 @@
                   onlyNumber
                   type="number"
                   [(ngModel)]="child.amount[month]"
-                  (contextmenu)="onRightClick($event, incomeBudget, month)"
+                  (contextmenu)="onRightClick($event, child, month)"
                   class="w-full text-right border-none focus:ring-0 focus:outline-none"
+                  (keydown.enter)="addBudget(BUDGET_TYPE.INCOME, incomeBudget.id)"
                 />
               </td>
               }
@@ -189,19 +181,14 @@
               <td
                 class="p-2 flex items-center focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
               >
-                <p
-                  class="px-2 bg-red-400 text-white cursor-pointer mr-2"
-                  (click)="deleteBudget(expenseBudget.id)"
-                >
-                  -
-                </p>
-
                 <input
                   inputNavigate
                   type="text"
                   [(ngModel)]="expenseBudget.name"
                   class="font-bold w-full border-none focus:ring-0 focus:outline-none"
                   autofocus
+                  (keydown.enter)="addBudget(BUDGET_TYPE.EXPENSE, expenseBudget.id)"
+                  (contextmenu)="onRightClick($event, expenseBudget, '', true)"
                 />
               </td>
               @for (month of months$ | async; track month; let last = $last) {
@@ -217,6 +204,7 @@
                   [(ngModel)]="expenseBudget.amount[month]"
                   (contextmenu)="onRightClick($event, expenseBudget, month)"
                   class="w-full text-right border-none focus:ring-0 focus:outline-none"
+                  (keydown.enter)="addBudget(BUDGET_TYPE.EXPENSE, expenseBudget.id)"
                 />
               </td>
               }
@@ -225,20 +213,15 @@
             @for (child of expenseBudget.children; track child.id) {
             <tr class="border">
               <td
-                class="p-2 flex items-center pl-6 focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
+                class="p-2 flex items-center focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
               >
-                <p
-                  class="px-2 bg-red-400 text-white cursor-pointer mr-2"
-                  (click)="deleteBudget(child.id, expenseBudget.id)"
-                >
-                  -
-                </p>
-
                 <input
                   inputNavigate
                   type="text"
                   [(ngModel)]="child.name"
                   class="w-full border-none focus:ring-0 focus:outline-none"
+                  (keydown.enter)="addBudget(BUDGET_TYPE.EXPENSE, expenseBudget.id)"
+                  (contextmenu)="onRightClick($event, child, '', true)"
                 />
               </td>
               @for (month of months$ | async; track month; let last = $last) {
@@ -252,8 +235,9 @@
                   onlyNumber
                   type="number"
                   [(ngModel)]="child.amount[month]"
-                  (contextmenu)="onRightClick($event, expenseBudget, month)"
+                  (contextmenu)="onRightClick($event, child, month)"
                   class="w-full text-right border-none focus:ring-0 focus:outline-none"
+                  (keydown.enter)="addBudget(BUDGET_TYPE.EXPENSE, expenseBudget.id)"
                 />
               </td>
               }
@@ -360,10 +344,17 @@
   (closeContextMenu)="closeContextMenu()"
   [style.left.px]="contextMenu.x"
   [style.top.px]="contextMenu.y"
-  class="absolute bg-white shadow-lg border p-2 rounded cursor-pointer hover:bg-gray-100"
+  class="absolute bg-white shadow-lg border rounded"
 >
-  <button (click)="applyToAll()" class="text-blue-600 cursor-pointer">
-    Apply to all
+  @if (!contextMenu.isNameCell) {
+    <button (click)="applyToAll()" class="text-blue-600 text-left cursor-pointer block text-sm cursor-pointer hover:bg-gray-100 p-2 w-full">
+      Apply to all
+    </button>
+    <hr>
+  }
+
+  <button (click)="deleteBudget(contextMenu.row!.id)" class="text-red-600 text-left cursor-pointer block text-sm cursor-pointer hover:bg-gray-100 p-2 w-full">
+    Delete this row
   </button>
 </div>
 }
