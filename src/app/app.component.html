@@ -1,0 +1,369 @@
+<div class="p-6 bg-gray-100 min-h-screen flex flex-col items-center">
+  <div class="bg-white p-4 rounded-lg shadow-md w-full container">
+    <div class="overflow-x-auto">
+      <!-- Month range section -->
+      <div class="flex items-center space-x-4 mb-4">
+        <label class="font-medium"
+          >Start Period:
+          <input
+            type="month"
+            [(ngModel)]="startPeriod"
+            class="border p-2 rounded w-60"
+          />
+        </label>
+        <label class="font-medium"
+          >End Period:
+          <input
+            type="month"
+            [(ngModel)]="endPeriod"
+            class="border p-2 rounded w-60"
+          />
+        </label>
+      </div>
+
+      @if ((months$ | async)?.length === 0) {
+      <p class="mb-4 text-red-500">
+        * Start period must be equal or greater than end period
+      </p>
+      }
+
+      <table class="w-full border border-gray-300 text-sm">
+        <thead>
+          <tr class="bg-gray-300 text-gray-700">
+            <th class="border p-2 text-left min-w-60">Category</th>
+            @for (month of months$ | async; track month) {
+            <th class="border p-2 min-w-60">{{ month }}</th>
+            }
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- Income Section -->
+          <tr class="bg-blue-100 font-bold border">
+            <td [attr.colspan]="(months$ | async)!.length + 1" class="p-2">
+              Income
+            </td>
+          </tr>
+
+          @for (incomeBudget of incomeBudgets(); track incomeBudget.id) {
+          <ng-container>
+            <tr class="border">
+              <td
+                class="p-2 flex items-center focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
+              >
+                <p
+                  class="px-2 bg-red-400 text-white cursor-pointer mr-2"
+                  (click)="deleteBudget(incomeBudget.id)"
+                >
+                  -
+                </p>
+
+                <input
+                  inputNavigate
+                  type="text"
+                  [(ngModel)]="incomeBudget.name"
+                  class="font-bold w-full border-none focus:ring-0 focus:outline-none"
+                  autofocus
+                />
+              </td>
+              @for (month of months$ | async; track month; let last = $last) {
+              <td
+                class="border p-2 relative focus-within:[outline:2px_solid_green]"
+                [class.focus-within:border-r-2]="last"
+                [class.focus-within:border-green-700]="last"
+              >
+                <input
+                  onlyNumber
+                  inputNavigate
+                  type="number"
+                  [(ngModel)]="incomeBudget.amount[month]"
+                  (contextmenu)="onRightClick($event, incomeBudget, month)"
+                  class="w-full text-right border-none focus:ring-0 focus:outline-none"
+                />
+              </td>
+              }
+            </tr>
+
+            @for (child of incomeBudget.children; track child.id) {
+            <tr class="border">
+              <td
+                class="p-2 flex items-center pl-6 focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
+              >
+                <p
+                  class="px-2 bg-red-400 text-white cursor-pointer mr-2"
+                  (click)="deleteBudget(child.id, incomeBudget.id)"
+                >
+                  -
+                </p>
+
+                <input
+                  inputNavigate
+                  type="text"
+                  [(ngModel)]="child.name"
+                  class="w-full border-none focus:ring-0 focus:outline-none"
+                />
+              </td>
+              @for (month of months$ | async; track month; let last = $last) {
+              <td
+                class="border p-2 relative focus-within:[outline:2px_solid_green]"
+                [class.focus-within:border-r-2]="last"
+                [class.focus-within:border-green-700]="last"
+              >
+                <input
+                  inputNavigate
+                  onlyNumber
+                  type="number"
+                  [(ngModel)]="child.amount[month]"
+                  (contextmenu)="onRightClick($event, incomeBudget, month)"
+                  class="w-full text-right border-none focus:ring-0 focus:outline-none"
+                />
+              </td>
+              }
+            </tr>
+            }
+
+            <tr>
+              <td
+                class="border p-2"
+                [attr.colspan]="(months$ | async)!.length + 1"
+              >
+                <button
+                  (click)="addBudget(BUDGET_TYPE.INCOME, incomeBudget.id)"
+                  class="text-blue-600 cursor-pointer"
+                >
+                  + Add new {{ incomeBudget.name || "Child" }} Category
+                </button>
+              </td>
+            </tr>
+
+            <tr class="border bg-gray-100 font-bold">
+              <td class="p-2 flex items-center">Sub Totals</td>
+              @for (month of months$ | async; track month) {
+              <td class="border p-2 relative text-right">
+                {{ subTotal(month, BUDGET_TYPE.INCOME, incomeBudget.id) }}
+              </td>
+              }
+            </tr>
+
+            <ng-container [ngTemplateOutlet]="blank_row"></ng-container>
+          </ng-container>
+          }
+
+          <tr>
+            <td
+              class="border p-2"
+              [attr.colspan]="(months$ | async)!.length + 1"
+            >
+              <button
+                (click)="addBudget(BUDGET_TYPE.INCOME)"
+                class="text-blue-600 cursor-pointer"
+              >
+                + Add new Parent Category
+              </button>
+            </td>
+          </tr>
+
+          <ng-container [ngTemplateOutlet]="blank_row"></ng-container>
+
+          <tr class="border bg-green-200 font-bold">
+            <td class="p-2 flex items-center">Income Total</td>
+            @for (month of months$ | async; track month) {
+            <td class="border p-2 relative text-right">
+              {{ total(month, BUDGET_TYPE.INCOME) }}
+            </td>
+            }
+          </tr>
+
+          <ng-container [ngTemplateOutlet]="blank_row"></ng-container>
+
+          <!-- Expense Section -->
+          <tr class="bg-blue-100 font-bold border">
+            <td [attr.colspan]="(months$ | async)!.length + 1" class="p-2">
+              Expense
+            </td>
+          </tr>
+
+          @for(expenseBudget of expenseBudgets(); track expenseBudget.id) {
+          <ng-container>
+            <tr class="border">
+              <td
+                class="p-2 flex items-center focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
+              >
+                <p
+                  class="px-2 bg-red-400 text-white cursor-pointer mr-2"
+                  (click)="deleteBudget(expenseBudget.id)"
+                >
+                  -
+                </p>
+
+                <input
+                  inputNavigate
+                  type="text"
+                  [(ngModel)]="expenseBudget.name"
+                  class="font-bold w-full border-none focus:ring-0 focus:outline-none"
+                  autofocus
+                />
+              </td>
+              @for (month of months$ | async; track month; let last = $last) {
+              <td
+                class="border p-2 relative focus-within:[outline:2px_solid_green]"
+                [class.focus-within:border-r-2]="last"
+                [class.focus-within:border-green-700]="last"
+              >
+                <input
+                  inputNavigate
+                  onlyNumber
+                  type="number"
+                  [(ngModel)]="expenseBudget.amount[month]"
+                  (contextmenu)="onRightClick($event, expenseBudget, month)"
+                  class="w-full text-right border-none focus:ring-0 focus:outline-none"
+                />
+              </td>
+              }
+            </tr>
+
+            @for (child of expenseBudget.children; track child.id) {
+            <tr class="border">
+              <td
+                class="p-2 flex items-center pl-6 focus-within:[outline:2px_solid_green] focus-within:border-l focus-within:border-green-700"
+              >
+                <p
+                  class="px-2 bg-red-400 text-white cursor-pointer mr-2"
+                  (click)="deleteBudget(child.id, expenseBudget.id)"
+                >
+                  -
+                </p>
+
+                <input
+                  inputNavigate
+                  type="text"
+                  [(ngModel)]="child.name"
+                  class="w-full border-none focus:ring-0 focus:outline-none"
+                />
+              </td>
+              @for (month of months$ | async; track month; let last = $last) {
+              <td
+                class="border p-2 relative focus-within:[outline:2px_solid_green]"
+                [class.focus-within:border-r-2]="last"
+                [class.focus-within:border-green-700]="last"
+              >
+                <input
+                  inputNavigate
+                  onlyNumber
+                  type="number"
+                  [(ngModel)]="child.amount[month]"
+                  (contextmenu)="onRightClick($event, expenseBudget, month)"
+                  class="w-full text-right border-none focus:ring-0 focus:outline-none"
+                />
+              </td>
+              }
+            </tr>
+            }
+
+            <tr>
+              <td
+                class="border p-2"
+                [attr.colspan]="(months$ | async)!.length + 1"
+              >
+                <button
+                  (click)="addBudget(BUDGET_TYPE.EXPENSE, expenseBudget.id)"
+                  class="text-blue-600 cursor-pointer"
+                >
+                  + Add new {{ expenseBudget.name || "Child" }} Category
+                </button>
+              </td>
+            </tr>
+
+            <tr class="border bg-gray-100 font-bold">
+              <td class="p-2 flex items-center">Sub Totals</td>
+              @for (month of months$ | async; track month) {
+              <td class="border p-2 relative text-right">
+                {{ subTotal(month, BUDGET_TYPE.EXPENSE, expenseBudget.id) }}
+              </td>
+              }
+            </tr>
+
+            <ng-container [ngTemplateOutlet]="blank_row"></ng-container>
+          </ng-container>
+          }
+
+          <tr>
+            <td
+              class="border p-2"
+              [attr.colspan]="(months$ | async)!.length + 1"
+            >
+              <button
+                (click)="addBudget(BUDGET_TYPE.EXPENSE)"
+                class="text-blue-600 cursor-pointer"
+              >
+                + Add new Parent Category
+              </button>
+            </td>
+          </tr>
+
+          <ng-container [ngTemplateOutlet]="blank_row"></ng-container>
+
+          <tr class="border bg-red-200 font-bold">
+            <td class="p-2 flex items-center">Expense Total</td>
+            @for (month of months$ | async; track month) {
+            <td class="border p-2 relative text-right">
+              {{ total(month, BUDGET_TYPE.EXPENSE) }}
+            </td>
+            }
+          </tr>
+
+          <ng-container [ngTemplateOutlet]="blank_row"></ng-container>
+
+          <!-- Net Budget Section -->
+          <tr class="border bg-blue-100 font-bold">
+            <td class="p-2 flex items-center">Profit / Loss</td>
+            @for (month of months$ | async; track month) {
+            <td class="border p-2 relative text-right">
+              {{ profitLoss(month) }}
+            </td>
+            }
+          </tr>
+
+          <tr class="border bg-blue-100 font-bold">
+            <td class="p-2 flex items-center">Opening Balance</td>
+            @for (month of months$ | async; track month; let i = $index) {
+            <td class="border p-2 relative text-right">
+              {{ openingBalance(month, i) }}
+            </td>
+            }
+          </tr>
+
+          <tr class="border bg-blue-100 font-bold">
+            <td class="p-2 flex items-center">Closing Balance</td>
+            @for (month of months$ | async; track month; let i = $index) {
+            <td class="border p-2 relative text-right">
+              {{ closingBalance(month, i) }}
+            </td>
+            }
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<ng-template #blank_row>
+  <tr>
+    <td class="border p-4" [attr.colspan]="(months$ | async)!.length + 1"></td>
+  </tr>
+</ng-template>
+
+<!-- Context Menu -->
+@if (contextMenu$ | async; as contextMenu) {
+<div
+  [ngClass]="{ hidden: !contextMenu.visible }"
+  (closeContextMenu)="closeContextMenu()"
+  [style.left.px]="contextMenu.x"
+  [style.top.px]="contextMenu.y"
+  class="absolute bg-white shadow-lg border p-2 rounded cursor-pointer hover:bg-gray-100"
+>
+  <button (click)="applyToAll()" class="text-blue-600 cursor-pointer">
+    Apply to all
+  </button>
+</div>
+}
